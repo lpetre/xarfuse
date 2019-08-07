@@ -1,0 +1,15 @@
+[package]
+name = "xarfuse"
+version = "0.1.0"
+authors = ["Luke Petre <lpetre@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+clap = "2.33"
+failure = "0.1.*"
+slog = "2.1.*"
+slog-term = "2.3.*"
+slog-async = "2.3.*"
+toml = "0.5"
+serde = { version = "1.0", features = ["derive"] }
+serde-aux = "0.6.*"
