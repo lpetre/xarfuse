@@ -13,6 +13,8 @@ use std::path::PathBuf;
 mod mount;
 mod xar;
 
+use crate::xar::Xar;
+
 fn setup_logger(level: slog::Level) -> slog::Logger {
     let decorator = slog_term::TermDecorator::new().build();
     let drain = slog_term::CompactFormat::new(decorator).build().fuse();
@@ -22,7 +24,7 @@ fn setup_logger(level: slog::Level) -> slog::Logger {
     slog::Logger::root(drain, o!())
 }
 
-fn main() {
+fn run() -> Result<(), failure::Error> {
     let archive_arg = Arg::with_name("archive")
         .index(1)
         .required(true)
@@ -55,18 +57,35 @@ fn main() {
     match matches.subcommand() {
         ("header", Some(sub_m)) => {
             let archive = sub_m.value_of("archive").unwrap();
-            let header = xar::Header::from_file(PathBuf::from(archive)).unwrap();
-            info!(&root_log, ""; "header" => format!("{:?}", header));
+            let xar = Xar::from_file(PathBuf::from(archive), root_log.clone())?;
+            info!(&root_log, ""; "header" => format!("{:?}", xar.header));
+            Ok(())
         }
         ("mount", Some(sub_m)) => {
             let archive = sub_m.value_of("archive").unwrap();
-            let header = xar::Header::from_file(PathBuf::from(archive)).unwrap();
-            let mount = header.find_mount().unwrap();
+            let xar = Xar::from_file(PathBuf::from(archive), root_log.clone())?;
+            let mount = xar.find_mount()?;
             if sub_m.is_present("print_only") {
                 println!("{}", mount.to_str().unwrap());
-                return;
+                Ok(())
+            } else {
+                xar.mount(mount)?;
+                Ok(())
             }
         }
-        _ => panic!("invalid subcommand"),
+        _ => Err(format_err!("invalid subcommand")),
+    }
+}
+
+// Boilerplate main to print errors nicely.
+fn main() {
+    std::env::set_var("RUST_BACKTRACE", "1");
+    if let Err(ref e) = run() {
+        use std::io::Write; // trait which holds `display`
+        let stderr = &mut ::std::io::stderr();
+        let errmsg = "Error writing to stderr";
+
+        writeln!(stderr, "{}, {}", e.as_fail(), e.backtrace()).expect(errmsg);
+        ::std::process::exit(1);
     }
 }

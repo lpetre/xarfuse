@@ -13,4 +13,5 @@ slog-async = "2.3.*"
 toml = "0.5"
 serde = { version = "1.0", features = ["derive"] }
 serde-aux = "0.6.*"
-nix = "0.13.*"
+nix = { git = "https://github.com/lpetre/nix", rev = "3afece0" }
+libc = "0.2.*"

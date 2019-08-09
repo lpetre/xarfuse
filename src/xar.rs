@@ -12,7 +12,7 @@ const DEFAULT_HEADER_SIZE: usize = 4 * 1024;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "UPPERCASE")]
-pub struct Header {
+pub struct XarHeader {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub offset: u64,
     pub version: String,
@@ -21,9 +21,15 @@ pub struct Header {
     pub mount_root: Option<String>,
 }
 
-impl Header {
-    pub fn from_file(archive_path: PathBuf) -> Result<Header, failure::Error> {
-        let file = File::open(archive_path)?;
+pub struct Xar {
+    pub archive: PathBuf,
+    pub logger: slog::Logger,
+    pub header: XarHeader,
+}
+
+impl Xar {
+    pub fn from_file(archive_path: PathBuf, logger: slog::Logger) -> Result<Xar, failure::Error> {
+        let file = File::open(&archive_path)?;
         let mut reader = BufReader::with_capacity(DEFAULT_HEADER_SIZE, file);
 
         loop {
@@ -37,8 +43,12 @@ impl Header {
                         reader.seek(SeekFrom::Start(0))?;
                         let mut buffer = vec![0; offset.try_into().unwrap()];
                         let _read = reader.read(&mut buffer)?;
-                        let header: Header = toml::from_slice(&buffer)?;
-                        return Ok(header);
+                        let header: XarHeader = toml::from_slice(&buffer)?;
+                        return Ok(Xar {
+                            archive: PathBuf::from(&archive_path),
+                            logger: logger,
+                            header: header,
+                        });
                     }
                 }
             }
