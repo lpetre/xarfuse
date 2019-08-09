@@ -13,6 +13,7 @@ use std::path::PathBuf;
 mod mount;
 mod xar;
 
+use crate::mount::directory::Directory;
 use crate::xar::Xar;
 
 fn setup_logger(level: slog::Level) -> slog::Logger {
@@ -64,12 +65,12 @@ fn run() -> Result<(), failure::Error> {
         ("mount", Some(sub_m)) => {
             let archive = sub_m.value_of("archive").unwrap();
             let xar = Xar::from_file(PathBuf::from(archive), root_log.clone())?;
-            let mount = xar.find_mount()?;
+            let mount = Directory::from_xar(&xar, root_log.clone())?;
             if sub_m.is_present("print_only") {
-                println!("{}", mount.to_str().unwrap());
+                println!("{}", mount.path.to_str().unwrap());
                 Ok(())
             } else {
-                xar.mount(mount)?;
+                xar.mount(&mount)?;
                 Ok(())
             }
         }

@@ -22,8 +22,8 @@ pub struct XarHeader {
 }
 
 pub struct Xar {
-    pub archive: PathBuf,
     pub logger: slog::Logger,
+    pub archive: PathBuf,
     pub header: XarHeader,
 }
 
@@ -45,8 +45,8 @@ impl Xar {
                         let _read = reader.read(&mut buffer)?;
                         let header: XarHeader = toml::from_slice(&buffer)?;
                         return Ok(Xar {
-                            archive: PathBuf::from(&archive_path),
                             logger: logger,
+                            archive: PathBuf::from(&archive_path),
                             header: header,
                         });
                     }
